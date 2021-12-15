@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
  *
  * @since 0.2
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class AstoUpload implements Upload {
 
     /**
@@ -81,10 +82,18 @@ public final class AstoUpload implements Upload {
     }
 
     @Override
+    public CompletionStage<Void> cancel() {
+        final Key key = this.started();
+        return this.storage
+            .exists(key)
+            .thenCompose(found -> this.storage.delete(key));
+    }
+
+    @Override
     public CompletionStage<Long> append(final Content chunk) {
         return this.chunks().thenCompose(
             chunks -> {
-                if (chunks.size() > 0) {
+                if (!chunks.isEmpty()) {
                     throw new UnsupportedOperationException("Multiple chunks are not supported");
                 }
                 final Key tmp = new Key.From(this.root(), UUID.randomUUID().toString());

@@ -8,6 +8,7 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Upload;
 import com.artipie.docker.error.UploadUnknownError;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Connection;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
@@ -47,6 +49,11 @@ public final class UploadEntity {
     public static final Pattern PATH = Pattern.compile(
         "^/v2/(?<name>.*)/blobs/uploads/(?<uuid>[^/]*).*$"
     );
+
+    /**
+     * Upload UUID Header.
+     */
+    private static final String UPLOAD_UUID = "Docker-Upload-UUID";
 
     /**
      * Ctor.
@@ -291,7 +298,7 @@ public final class UploadEntity {
                                     new RsWithStatus(RsStatus.NO_CONTENT),
                                     new ContentLength("0"),
                                     new Header("Range", String.format("0-%d", offset)),
-                                    new Header("Docker-Upload-UUID", uuid)
+                                    new Header(UploadEntity.UPLOAD_UUID, uuid)
                                 )
                             )
                         )
@@ -427,7 +434,7 @@ public final class UploadEntity {
                 ),
                 new Header("Range", String.format("0-%d", this.offset)),
                 new ContentLength("0"),
-                new Header("Docker-Upload-UUID", this.uuid)
+                new Header(UploadEntity.UPLOAD_UUID, this.uuid)
             ).send(connection);
         }
     }
@@ -452,6 +459,61 @@ public final class UploadEntity {
                     new Location(String.format("/v2/%s/blobs/%s", name.value(), digest.string())),
                     new ContentLength("0"),
                     new DigestHeader(digest)
+                )
+            );
+        }
+    }
+
+    /**
+     * Slice for DELETE method.
+     *
+     * @since 0.16
+     */
+    public static final class Delete implements ScopeSlice {
+
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Delete(final Docker docker) {
+            this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Pull(new Request(line).name());
+        }
+
+        @Override
+        public Response response(
+            final String line,
+            final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body
+        ) {
+            final Request request = new Request(line);
+            final RepoName name = request.name();
+            final String uuid = request.uuid();
+            return new AsyncResponse(
+                this.docker.repo(name).uploads().get(uuid).thenCompose(
+                    x -> x.map(
+                        (Function<Upload, CompletionStage<? extends Response>>) upload ->
+                            upload.cancel().thenApply(
+                                offset -> new RsWithHeaders(
+                                    new RsWithStatus(RsStatus.OK),
+                                    new Header(UploadEntity.UPLOAD_UUID, uuid)
+                                )
+                            )
+                    ).orElse(
+                        CompletableFuture.completedFuture(
+                            new ErrorsResponse(RsStatus.NOT_FOUND, new UploadUnknownError(uuid))
+                        )
+                    )
                 )
             );
         }
