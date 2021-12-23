@@ -15,6 +15,8 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.error.InvalidDigestException;
 import com.artipie.docker.misc.DigestedFlowable;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -77,8 +79,11 @@ public final class AstoUpload implements Upload {
     }
 
     @Override
-    public CompletionStage<Void> start() {
-        return this.storage.save(this.started(), new Content.From(new byte[0]));
+    public CompletableFuture<Void> start(final Instant time) {
+        return this.storage.save(
+            this.started(),
+            new Content.From(time.toString().getBytes(StandardCharsets.US_ASCII))
+        );
     }
 
     @Override

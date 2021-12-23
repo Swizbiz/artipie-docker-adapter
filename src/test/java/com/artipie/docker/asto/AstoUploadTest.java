@@ -7,6 +7,7 @@ package com.artipie.docker.asto;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
@@ -15,6 +16,11 @@ import com.artipie.docker.Layers;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import io.reactivex.Flowable;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +30,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import org.hamcrest.Description;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
@@ -67,6 +74,21 @@ class AstoUploadTest {
         MatcherAssert.assertThat(
             this.storage.list(this.upload.root()).join().isEmpty(),
             new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void shouldSaveStartedDateWhenLoadingIsStarted() {
+        // @checkstyle MagicNumberCheck (1 line)
+        final Instant time = LocalDateTime.of(2020, Month.MAY, 19, 12, 58, 11)
+            .atZone(ZoneOffset.UTC).toInstant();
+        this.upload.start(time).join();
+        MatcherAssert.assertThat(
+            new String(
+                new BlockingStorage(this.storage)
+                    .value(new Key.From(this.upload.root(), "started")),
+                StandardCharsets.US_ASCII
+            ), Matchers.equalTo("2020-05-19T12:58:11Z")
         );
     }
 

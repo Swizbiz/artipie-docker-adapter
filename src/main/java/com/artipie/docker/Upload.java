@@ -5,6 +5,8 @@
 package com.artipie.docker;
 
 import com.artipie.asto.Content;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -23,11 +25,20 @@ public interface Upload {
     String uuid();
 
     /**
-     * Start upload.
+     * Start upload with {@code Instant.now()} upload start time.
      *
      * @return Completion or error signal.
      */
-    CompletionStage<Void> start();
+    default CompletableFuture<Void> start() {
+        return this.start(Instant.now());
+    }
+
+    /**
+     * Start upload.
+     * @param time Upload start time
+     * @return Future
+     */
+    CompletableFuture<Void> start(Instant time);
 
     /**
      * Cancel upload.
