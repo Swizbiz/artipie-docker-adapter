@@ -203,9 +203,6 @@ public final class UploadEntity {
      * Slice for PUT method.
      *
      * @since 0.2
-     * @todo #137:30min Figure out whether or not should uploaded data be removed if digests do not
-     *  match. There is no direct answer in docs, so this should be check experimentally with real
-     *  docker registry.
      */
     public static final class Put implements ScopeSlice {
 
