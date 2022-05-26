@@ -7,6 +7,7 @@ package com.artipie.docker.asto;
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
+import com.artipie.asto.MetaCommon;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
@@ -109,7 +110,8 @@ public final class AstoUpload implements Upload {
                         return this.storage.move(tmp, key).thenApply(ignored -> key);
                     }
                 ).thenCompose(
-                    key -> this.storage.size(key).thenApply(updated -> updated - 1)
+                    key -> this.storage.metadata(key).thenApply(meta -> new MetaCommon(meta).size())
+                        .thenApply(updated -> updated - 1)
                 );
             }
         );
@@ -124,7 +126,9 @@ public final class AstoUpload implements Upload {
                     result = CompletableFuture.completedFuture(0L);
                 } else {
                     final Key key = chunks.iterator().next();
-                    result = this.storage.size(key).thenApply(size -> Math.max(size - 1, 0));
+                    result = this.storage.metadata(key)
+                        .thenApply(meta -> new MetaCommon(meta).size())
+                        .thenApply(size -> Math.max(size - 1, 0));
                 }
                 return result;
             }

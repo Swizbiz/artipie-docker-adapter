@@ -6,6 +6,7 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
@@ -86,8 +87,8 @@ final class AstoBlobsTest {
         }
 
         @Override
-        public CompletableFuture<Long> size(final Key key) {
-            return this.origin.size(key);
+        public CompletableFuture<? extends Meta> metadata(final Key key) {
+            return this.origin.metadata(key);
         }
 
         @Override

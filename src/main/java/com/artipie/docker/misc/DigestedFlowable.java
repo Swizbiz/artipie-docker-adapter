@@ -12,8 +12,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
-import org.cactoos.io.BytesOf;
-import org.cactoos.text.HexOf;
+import org.apache.commons.codec.binary.Hex;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
@@ -54,7 +53,7 @@ public final class DigestedFlowable extends Flowable<ByteBuffer> {
             }
         ).doOnComplete(
             () -> this.dig.set(
-                new Digest.Sha256(new HexOf(new BytesOf(sha.digest())).asString())
+                new Digest.Sha256(Hex.encodeHexString(sha.digest()))
             )
         ).subscribe(subscriber);
     }

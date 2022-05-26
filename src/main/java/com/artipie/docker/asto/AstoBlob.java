@@ -6,6 +6,7 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.MetaCommon;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
@@ -53,7 +54,9 @@ public final class AstoBlob implements Blob {
 
     @Override
     public CompletionStage<Long> size() {
-        return this.storage.size(this.key);
+        return this.storage.metadata(this.key).thenApply(
+            meta -> new MetaCommon(meta).size()
+        );
     }
 
     @Override
