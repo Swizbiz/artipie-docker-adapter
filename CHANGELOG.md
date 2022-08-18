@@ -1,3 +1,7 @@
+## v0.17.2
+ - 7ad2437 chore: update secret and path to files with license (#527)
+ - 8f1b0f4 Validate artipie's repositories readme files content (#521)
+ - a1ed9cd deps: remove me from assignees
 
 ## v0.17.1
 
